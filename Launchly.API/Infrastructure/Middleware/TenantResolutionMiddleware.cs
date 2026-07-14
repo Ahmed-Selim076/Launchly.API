@@ -28,10 +28,11 @@ public class TenantResolutionMiddleware
     public async Task InvokeAsync(
         HttpContext context,
         AppDbContext db,
-        TenantContext tenantContext)
+        TenantContext tenantContext,
+        IConfiguration config)
     {
         // 1. Try Host header first (production & dev with proper subdomain routing)
-        var subdomain = ExtractSubdomain(context.Request.Host.Host);
+        var subdomain = ExtractSubdomain(context.Request.Host.Host, config["PLATFORM_DOMAIN"]);
 
         // 2. Fall back to X-Tenant-Subdomain header (dev: frontend on :4200 calls API on :5117)
         if (subdomain is null)
@@ -157,28 +158,63 @@ public class TenantResolutionMiddleware
         return isActive;
     }
 
-    private static string? ExtractSubdomain(string host)
+    private static string? ExtractSubdomain(string host, string? platformDomain)
     {
-        var hostWithoutPort = host.Split(':')[0];
+        var hostWithoutPort = host.Split(':')[0].ToLowerInvariant();
+
+        if (!string.IsNullOrWhiteSpace(platformDomain))
+        {
+            var normalizedPlatformDomain = platformDomain.Split(':')[0].ToLowerInvariant();
+
+            // Exact match to the platform's own domain (e.g. launchly.com, or
+            // the Vercel/Railway domain used before a custom domain is set
+            // up) — that's the marketing site / API root, not a tenant.
+            if (hostWithoutPort == normalizedPlatformDomain)
+                return null;
+
+            var suffix = "." + normalizedPlatformDomain;
+
+            // Only a real subdomain OF the platform domain counts as a
+            // tenant — e.g. "storename.launchly.com" when
+            // PLATFORM_DOMAIN=launchly.com. A host that merely happens to
+            // have 3+ dot-separated labels (Railway's own
+            // launchly-api076.up.railway.app, Vercel's own *.vercel.app)
+            // does NOT match this suffix and is correctly treated as "no
+            // tenant" below, instead of misreading its first label as a
+            // subdomain and 404ing every request.
+            if (hostWithoutPort.EndsWith(suffix, StringComparison.Ordinal))
+            {
+                var subdomain = hostWithoutPort[..^suffix.Length];
+
+                // 'admin' hosts the SuperAdmin panel, not a tenant store —
+                // it's reserved (see AuthValidators.ReservedSubdomains)
+                // precisely so no real tenant can ever collide with it.
+                return subdomain.Equals("www", StringComparison.OrdinalIgnoreCase) ||
+                       subdomain.Equals("admin", StringComparison.OrdinalIgnoreCase)
+                    ? null
+                    : subdomain;
+            }
+
+            // Host isn't the platform domain and isn't a subdomain of it —
+            // e.g. someone hitting the Railway API domain directly. Not a
+            // tenant request.
+            return null;
+        }
+
+        // No PLATFORM_DOMAIN configured at all — fall back to the old
+        // heuristic (only relevant for quick local testing without the env
+        // var set; every real environment should set PLATFORM_DOMAIN).
         var parts = hostWithoutPort.Split('.');
 
-        // Production: subdomain.launchly.com (3+ parts)
         if (parts.Length >= 3)
         {
             var subdomain = parts[0];
-
-            // 'admin' hosts the SuperAdmin panel, not a tenant store — it's
-            // reserved (see AuthValidators.ReservedSubdomains) precisely so no
-            // real tenant can ever collide with it. Treating it as a normal
-            // subdomain here would make every SuperAdmin API call fail the
-            // tenant lookup and 404.
             return subdomain.Equals("www", StringComparison.OrdinalIgnoreCase) ||
                    subdomain.Equals("admin", StringComparison.OrdinalIgnoreCase)
                 ? null
                 : subdomain;
         }
 
-        // Development: subdomain.localhost (2 parts)
         if (parts.Length == 2 && parts[1].Equals("localhost", StringComparison.OrdinalIgnoreCase))
         {
             return parts[0];
