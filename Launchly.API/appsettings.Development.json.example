@@ -1,0 +1,36 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Debug",
+      "Microsoft.AspNetCore": "Information",
+      "Microsoft.EntityFrameworkCore.Database.Command": "Information"
+    }
+  },
+
+  "_comment": "Copy this file to appsettings.Development.json and fill in real local values. That file is gitignored and must never be committed. Prefer `dotnet user-secrets set <key> <value>` over editing it directly, so secrets never touch disk inside the repo at all.",
+
+  "DATABASE_URL": "Host=localhost;Database=launchly_db;Username=postgres;Password=CHANGE_ME",
+
+  "JWT_SECRET": "CHANGE_ME_min_32_chars_random_string",
+  "JWT_ISSUER": "launchly-api",
+  "JWT_AUDIENCE": "launchly-client",
+  "JWT_EXPIRY_MINUTES": "1440",
+  "JWT_REFRESH_DAYS": "7",
+
+  "GOOGLE_CLIENT_ID": "",
+  "GOOGLE_CLIENT_SECRET": "",
+
+  "CLOUDINARY_CLOUD_NAME": "",
+  "CLOUDINARY_API_KEY": "",
+  "CLOUDINARY_API_SECRET": "",
+
+  "SENDGRID_API_KEY": "",
+  "SENDGRID_FROM_EMAIL": "noreply@launchly.app",
+  "SENDGRID_FROM_NAME": "Launchly",
+
+  "VISITOR_IP_SALT": "CHANGE_ME_random_string",
+  "PLATFORM_DOMAIN": "localhost:4200",
+
+  "SUPER_ADMIN_EMAIL": "admin@launchly.local",
+  "SUPER_ADMIN_PASSWORD": "CHANGE_ME_strong_password"
+}

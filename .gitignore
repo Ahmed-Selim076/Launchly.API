@@ -1,0 +1,26 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+
+## Secrets — never commit real credentials. Copy appsettings.Development.json.example
+## to appsettings.Development.json locally, or better, use `dotnet user-secrets`.
+appsettings.Development.json
+appsettings.Local.json
+*.env
+.env
+.env.*
+
+## Logs
+logs/
+*.log
+
+## IDE
+.vs/
+.vscode/
+.idea/
+
+## OS
+.DS_Store
+Thumbs.db
