@@ -215,8 +215,20 @@ try
                     var host = new Uri(origin).Host;
                     var platformDomain = builder.Configuration["PLATFORM_DOMAIN"]
                         ?? "launchly.app";
+
+                    // Vercel gives every deployment (production + every preview/
+                    // branch build) its own unique *.vercel.app hostname, e.g.
+                    // launchly-frontend-pznrhmlfw-xxahmedwork-5030s-projects.vercel.app
+                    // Those all belong to the same Vercel project as the production
+                    // domain, so allow any host that starts with the same project
+                    // prefix and ends in .vercel.app, in addition to the exact
+                    // production domain configured in PLATFORM_DOMAIN.
+                    var vercelProjectPrefix = builder.Configuration["VERCEL_PROJECT_PREFIX"]
+                        ?? "launchly-frontend";
+
                     return host == platformDomain ||
                            host.EndsWith($".{platformDomain}") ||
+                           (host.StartsWith(vercelProjectPrefix) && host.EndsWith(".vercel.app")) ||
                            host == "localhost" ||
                            host.EndsWith(".localhost");
                 })
