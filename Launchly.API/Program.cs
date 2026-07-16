@@ -193,6 +193,17 @@ try
                 Endpoint = "POST:/api/v1/auth/forgot-password",
                 Limit = 3,
                 Period = "5m"
+            },
+            new RateLimitRule
+            {
+                // Public, unauthenticated, and fires on every keystroke on
+                // signup step 2 (debounced client-side to one call per
+                // 400ms, but that's a client courtesy, not a server
+                // guarantee) — needs its own throttle like the other public
+                // auth endpoints above so it can't be hammered directly.
+                Endpoint = "GET:/api/v1/auth/check-subdomain/*",
+                Limit = 20,
+                Period = "1m"
             }
         ];
     });
