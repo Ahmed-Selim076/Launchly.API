@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
+using Launchly.API.Application.Auth.DTOs;
 using Launchly.API.Application.Restaurant.DTOs;
 using Launchly.API.Application.Store.DTOs;
 using Launchly.API.Common;
@@ -8,6 +9,7 @@ using Launchly.API.Core.Entities;
 using Launchly.API.Core.Enums;
 using Launchly.API.Core.Interfaces;
 using Launchly.API.Infrastructure.Data;
+using Launchly.API.Infrastructure.Services;
 
 namespace Launchly.API.Application.Store;
 
@@ -16,15 +18,18 @@ public class StoreService
     private readonly AppDbContext _db;
     private readonly ITenantContext _tenantContext;
     private readonly IConfiguration _config;
+    private readonly TokenService _tokenService;
 
     public StoreService(
         AppDbContext db,
         ITenantContext tenantContext,
-        IConfiguration config)
+        IConfiguration config,
+        TokenService tokenService)
     {
         _db = db;
         _tenantContext = tenantContext;
         _config = config;
+        _tokenService = tokenService;
     }
 
     // ─── Public Store Settings ────────────────────────────────────────────────
@@ -385,17 +390,17 @@ public class StoreService
 
     // ─── Customer Registration ────────────────────────────────────────────────
 
-    public async Task<Result<bool>> RegisterCustomerAsync(RegisterCustomerRequest request)
+    public async Task<Result<AuthResponse>> RegisterCustomerAsync(RegisterCustomerRequest request)
     {
         if (_tenantContext.TenantId is null)
-            return Result<bool>.Failure("Store context is required.");
+            return Result<AuthResponse>.Failure("Store context is required.");
 
         var emailTaken = await _db.Users
             .AnyAsync(u => u.Email == request.Email.ToLower().Trim() &&
                            u.TenantId == _tenantContext.TenantId);
 
         if (emailTaken)
-            return Result<bool>.Failure("An account with this email already exists.");
+            return Result<AuthResponse>.Failure("An account with this email already exists.");
 
         var customer = new User
         {
@@ -411,8 +416,49 @@ public class StoreService
         _db.Users.Add(customer);
         await _db.SaveChangesAsync();
 
-        return Result<bool>.Created(true);
+        // Issue real tokens immediately — the guest-checkout flow that calls
+        // this registers the customer and then places an order in the same
+        // step, and PlaceOrder requires an authenticated Customer JWT.
+        // Returning just `true` here (as before) left the customer with no
+        // token at all, so that immediately-following order call would fail
+        // with 401 for every brand-new customer.
+        var accessToken = _tokenService.GenerateAccessToken(customer);
+        var refreshToken = await SaveRefreshTokenAsync(customer.Id);
+
+        return Result<AuthResponse>.Created(new AuthResponse(
+            accessToken,
+            refreshToken,
+            MapToUserDto(customer)
+        ));
     }
+
+    private async Task<string> SaveRefreshTokenAsync(Guid userId)
+    {
+        var raw = _tokenService.GenerateRefreshToken();
+        var hash = _tokenService.HashRefreshToken(raw);
+        var refreshDays = int.Parse(_config["JWT_REFRESH_DAYS"] ?? "7");
+
+        _db.RefreshTokens.Add(new RefreshToken
+        {
+            UserId = userId,
+            TokenHash = hash,
+            ExpiresAt = DateTime.UtcNow.AddDays(refreshDays)
+        });
+        await _db.SaveChangesAsync();
+
+        return raw;
+    }
+
+    private static UserDto MapToUserDto(User user) => new(
+        user.Id,
+        user.FirstName,
+        user.LastName,
+        user.Email,
+        user.Role.ToString(),
+        user.TenantId,
+        null,
+        null
+    );
 
     // ─── Place Order ──────────────────────────────────────────────────────────
 
