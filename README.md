@@ -86,7 +86,7 @@ Launchly.API/
 
 ### Backend
 ```bash
-git clone https://github.com/Mohamed-Elsayed1xx/Launchly-API
+git clone https://github.com/Ahmed-Selim076/Launchly.API
 cd Launchly.API
 ```
 
@@ -116,7 +116,7 @@ dotnet run
 
 ### Frontend
 ```bash
-git clone https://github.com/Mohamed-Elsayed1xx/Launchly-Frontend
+git clone https://github.com/Ahmed-Selim076/Launchly.Frontend
 cd Launchly.Frontend
 npm install
 ng serve
