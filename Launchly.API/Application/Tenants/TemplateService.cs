@@ -23,21 +23,21 @@ public class TemplateService
     {
         [StoreType.Ecommerce] = new[]
         {
-            new TemplateOptionDto(1, "Template 1", "/assets/templates/ecommerce/minimal.png"),
-            new TemplateOptionDto(2, "Template 2", "/assets/templates/ecommerce/bold.png"),
-            new TemplateOptionDto(3, "Template 3", "/assets/templates/ecommerce/editorial.png"),
+            new TemplateOptionDto(1, "Template 1", "/assets/templates/ecommerce/Template 1.png"),
+            new TemplateOptionDto(2, "Template 2", "/assets/templates/ecommerce/Template 2.png"),
+            new TemplateOptionDto(3, "Template 3", "/assets/templates/ecommerce/Template 3.png"),
         },
         [StoreType.Booking] = new[]
         {
-            new TemplateOptionDto(1, "Template 1", "/assets/templates/booking/minimal.png"),
-            new TemplateOptionDto(2, "Template 2", "/assets/templates/booking/bold.png"),
-            new TemplateOptionDto(3, "Template 3", "/assets/templates/booking/editorial.png"),
+            new TemplateOptionDto(1, "Template 1", "/assets/templates/booking/B Template 1.png"),
+            new TemplateOptionDto(2, "Template 2", "/assets/templates/booking/B Template 2.png"),
+            new TemplateOptionDto(3, "Template 3", "/assets/templates/booking/B Template 3.png"),
         },
         [StoreType.Restaurant] = new[]
         {
-            new TemplateOptionDto(1, "Template 1", "/assets/templates/restaurant/minimal.png"),
-            new TemplateOptionDto(2, "Template 2", "/assets/templates/restaurant/bold.png"),
-            new TemplateOptionDto(3, "Template 3", "/assets/templates/restaurant/editorial.png"),
+            new TemplateOptionDto(1, "Template 1", "/assets/templates/restaurant/R Template 1.png"),
+            new TemplateOptionDto(2, "Template 2", "/assets/templates/restaurant/R Template 2.png"),
+            new TemplateOptionDto(3, "Template 3", "/assets/templates/restaurant/R Template 3.png"),
         },
     };
 
